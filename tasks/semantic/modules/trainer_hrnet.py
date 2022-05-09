@@ -403,7 +403,10 @@ class Trainer():
 					proj_labels = proj_labels.cuda(non_blocking=True).long()
 
 				# compute output
-				output = model(in_vol, proj_mask)
+				# output = model(in_vol, proj_mask)
+				# change validate code too 
+				output = model(in_vol)
+				proj_labels = proj_labels.long()
 				loss = criterion(torch.log(output.clamp(min=1e-8)), proj_labels)
 
 				# measure accuracy and record loss
