@@ -492,7 +492,7 @@ class HighResolutionNet(nn.Module):
 
 def get_seg_model(cfg, **kwargs):
     model = HighResolutionNet(cfg, **kwargs)
-    print(" HRNet Total number of parameters: ", sum(p.numel() for p in model.parameters()))
+    print("HRNet Total number of parameters: ", sum(p.numel() for p in model.parameters()))
     print("HRNet Total number of parameters requires_grad: ", sum(p.numel() for p in model.parameters() if p.requires_grad)
 )
     # model.init_weights(cfg['MODEL']['PRETRAINED'])
