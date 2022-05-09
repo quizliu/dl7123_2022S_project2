@@ -254,7 +254,8 @@ class Trainer():
 					best_val_iou = iou
 
 					# save the weights!
-					self.model_single.save_checkpoint(self.log, suffix="")
+					# self.model_single.save_checkpoint(self.log, suffix="")
+					torch.save(self.model_single.state_dict(), self.log + "/hrnet")
 
 				print("*" * 80)
 
