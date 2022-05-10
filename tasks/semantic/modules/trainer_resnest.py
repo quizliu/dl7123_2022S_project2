@@ -18,6 +18,7 @@ from common.warmupLR import *
 from tasks.semantic.modules.segmentator import *
 from tasks.semantic.modules.ioueval import *
 
+import torch.distributed as dist
 
 class Trainer():
 	def __init__(self, ARCH, DATA, datadir, logdir, path=None):
@@ -78,8 +79,9 @@ class Trainer():
 
 		##################################################################
 		# resnest model: use original repo's model
+		# init process group when gpu > 1 before model
 		##################################################################
-
+		dist.init_process_group("gloo", world_size=torch.cuda.device_count())
 		from tasks.semantic.modules.resnest_model import resnest50
 		with torch.no_grad():
 			self.model = resnest50()

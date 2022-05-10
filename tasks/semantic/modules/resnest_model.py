@@ -426,4 +426,6 @@ def resnest50(pretrained=False, root='~/.encoding/models', **kwargs):
 				   radix=2, groups=1, bottleneck_width=64,
 				   deep_stem=True, stem_width=32, avg_down=True,
 				   avd=True, avd_first=False, **kwargs)
+	print("ResNeSt50 Total number of parameters: ", sum(p.numel() for p in model.parameters()))
+	print("ResNeSt50 Total number of parameters requires_grad: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
 	return model
