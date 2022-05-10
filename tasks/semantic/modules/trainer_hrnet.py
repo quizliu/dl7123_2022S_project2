@@ -81,7 +81,7 @@ class Trainer():
 		# init process group when gpu > 1 before model
 		##################################################################
 		import torch.distributed as dist
-		dist.init_process_group("gloo", world_size=torch.cuda.device_count())
+		dist.init_process_group("nccl", rank=dist.get_rank(), world_size=torch.cuda.device_count())
 		import yaml
 		from tasks.semantic.modules.hrnet_models import seg_hrnet
 		config = yaml.safe_load(open(r'modules/hrnet_models/seg_hrmet.yaml', 'r'))
