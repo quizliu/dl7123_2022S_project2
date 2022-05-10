@@ -30,7 +30,7 @@ class Trainer():
 		self.path = path
 
 		# put logger where it belongs
-		self.tb_logger = Logger(self.log + "/tb")
+		self.tb_logger = Logger(self.log + '/' + f"{self.ARCH['backbone']['name']}_tb")
 		self.info = {"train_update": 0,
 					 "train_loss": 0,
 					 "train_acc": 0,
