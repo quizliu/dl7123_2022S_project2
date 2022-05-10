@@ -81,7 +81,9 @@ class Trainer():
 		# resnest model: use original repo's model
 		# init process group when gpu > 1 before model
 		##################################################################
-		dist.init_process_group("nccl", rank=dist.get_rank(), world_size=torch.cuda.device_count())
+		if torch.cuda.is_available() and torch.cuda.device_count() > 1:
+			import torch.distributed as dist
+			dist.init_process_group("nccl", rank=dist.get_rank(), world_size=torch.cuda.device_count())
 		from tasks.semantic.modules.resnest_model import resnest50
 		with torch.no_grad():
 			self.model = resnest50()
