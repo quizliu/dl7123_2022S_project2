@@ -30,7 +30,7 @@ from tasks.semantic.modules.ioueval import *
 
 
 class Trainer():
-	def __init__(self, ARCH, DATA, datadir, logdir, path=None):
+	def __init__(self, ARCH, DATA, datadir, logdir, testdata, path=None):
 		# parameters
 		self.ARCH = ARCH
 		self.DATA = DATA
@@ -59,7 +59,8 @@ class Trainer():
 		parserModule = SourceFileLoader("parserModule", parserPath).load_module()
 		self.parser = parserModule.Parser(root=self.datadir,
 										  train_sequences=self.DATA["split"]["train"],
-										  valid_sequences=self.DATA["split"]["valid"],
+										  # valid_sequences=self.DATA["split"]["valid"],
+										  valid_sequences=[4] if testdata == 'fake' else [9],
 										  test_sequences=None,
 										  labels=self.DATA["labels"],
 										  color_map=self.DATA["color_map"],

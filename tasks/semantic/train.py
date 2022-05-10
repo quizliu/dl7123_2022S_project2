@@ -49,6 +49,12 @@ if __name__ == '__main__':
 		default=None,
 		help='Directory to get the pretrained model. If not passed, do from scratch!'
 	)
+	parser.add_argument(
+		'--testdata', '-t',
+		type=str,
+		default='real',
+		help='train the model with fake data(-d link to fake dataset, test on 04) or real data(-d link to real dataset. test on 09)'
+	)
 	FLAGS, unparsed = parser.parse_known_args()
 
     # FLAGS = ARG()
@@ -120,9 +126,9 @@ if __name__ == '__main__':
 	############################################
 	model_name = ARCH['backbone']['name']
 	if model_name == 'hrnet':
-		trainer = modules.trainer_hrnet.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.pretrained)
+		trainer = modules.trainer_hrnet.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	elif model_name == 'resnest50':
-		trainer = modules.trainer_resnest.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.pretrained)
+		trainer = modules.trainer_resnest.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	else:
-		trainer = modules.trainer.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.pretrained)
+		trainer = modules.trainer.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	trainer.train()

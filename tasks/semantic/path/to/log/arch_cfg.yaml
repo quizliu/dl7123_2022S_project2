@@ -22,10 +22,9 @@ train:
 
 ################################################################################
 # backbone parameters
-# hrnet: all model related parameters are from hrnet repo's config
 ################################################################################
 backbone:
-  name: "resnest50"
+  name: "resnet"
   input_depth:
     range: True
     xyz: True
@@ -35,7 +34,7 @@ backbone:
   OS: 16 # output stride (only horizontally)
   train: True # train backbone?
   extra:
-    layers: 50  # resnest50
+    layers: 50  # resnet50
 
 ################################################################################
 # decoder parameters
