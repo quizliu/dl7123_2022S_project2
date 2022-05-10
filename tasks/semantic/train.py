@@ -10,6 +10,7 @@ import shutil
 import __init__ as booger
 import modules.trainer
 import modules.trainer_hrnet
+import modules.trainer_resnest
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser("./train.py")
@@ -112,8 +113,14 @@ if __name__ == '__main__':
 		quit()
 
 	# create trainer and start the training
-	if ARCH['backbone']['name'] == 'hrnet':
+	############################################
+	# KITTI: choose a model
+	############################################
+	model_name = ARCH['backbone']['name']
+	if model_name == 'hrnet':
 		trainer = modules.trainer_hrnet.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.pretrained)
+	elif model_name == 'resnest50':
+		trainer = modules.trainer_resnest.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.pretrained)
 	else:
 		trainer = modules.trainer.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.pretrained)
 	trainer.train()

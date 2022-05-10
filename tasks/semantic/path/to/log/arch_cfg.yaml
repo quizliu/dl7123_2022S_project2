@@ -9,8 +9,8 @@ train:
   momentum: 0.9          # sgd momentum
   lr_decay: 0.995        # learning rate decay per epoch after initial cycle (from min lr)
   w_decay: 0.0001        # weight decay
-  batch_size: 2        # batch size
-  report_batch: 20        # every x batches, report loss
+  batch_size: 6        # batch size
+  report_batch: 1        # every x batches, report loss
   report_epoch: 1        # every x epochs, report validation set
   epsilon_w: 0.001       # class weight w = 1 / (content + epsilon_w)
   save_summary: False    # Summary of weight histograms for tensorboard
@@ -25,7 +25,7 @@ train:
 # hrnet: all model related parameters are from hrnet repo's config
 ################################################################################
 backbone:
-  name: "hrnet"
+  name: "resnest50"
   input_depth:
     range: True
     xyz: True
@@ -35,7 +35,7 @@ backbone:
   OS: 16 # output stride (only horizontally)
   train: True # train backbone?
   extra:
-    layers: 50  # resnet50
+    layers: 50  # resnest50
 
 ################################################################################
 # decoder parameters
