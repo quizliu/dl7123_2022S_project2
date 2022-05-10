@@ -193,9 +193,9 @@ split: # sequence numbers
     - 7
     - 10
   valid:
-    - 9
+    - 4
   test:
-    - 9
+    - 4
 #split: # sequence numbers
 #  train:
 #    - 0

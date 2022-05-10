@@ -398,7 +398,6 @@ class ResNet(nn.Module):
 		return nn.Sequential(*layers)
 
 	def forward(self, x):
-		x = torch.rand(3, 5, 64, 64)
 		############################################
 		# KITTI: try FCN no strides
 		############################################
