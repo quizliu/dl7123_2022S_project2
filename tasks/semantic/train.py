@@ -1,4 +1,5 @@
-# !/usr/bin/env python3
+import sys
+print(sys.version)
 # This file is covered by the LICENSE file in the root of this project.
 import argparse
 import subprocess
@@ -13,6 +14,7 @@ import modules.trainer_hrnet
 import modules.trainer_resnest
 
 if __name__ == '__main__':
+	print('main:', sys.version)
 	parser = argparse.ArgumentParser("./train.py")
 	parser.add_argument(
 		'--dataset', '-d',
