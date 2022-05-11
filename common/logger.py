@@ -24,7 +24,7 @@ class Logger(object):
 
     # self.writer.flush()
     with self.writer.as_default():
-      tf.summary.scalar(tag, value, step= step)
+      tf.summary.scalar(tag, value, step=step)
       self.writer.flush()
 
   def image_summary(self, tag, images, step):

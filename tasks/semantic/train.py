@@ -91,10 +91,16 @@ if __name__ == '__main__':
 		quit()
 
 	# create log folder
+	# save different models to separate tb
 	try:
-		if os.path.isdir(FLAGS.log):
-			shutil.rmtree(FLAGS.log)
-		os.makedirs(FLAGS.log)
+		if not os.path.isdir(FLAGS.log):  # no log directory
+			os.makedirs(FLAGS.log)
+		else:  							  # log fite exists, delete all yaml except tb directory
+			for f in os.listdir(FLAGS.log):
+				if f.endswith('yaml'):
+					os.remove(os.path.join(FLAGS.log, f))
+				elif f == f"{ARCH['backbone']['name']}_tb":
+					shutil.rmtree(os.path.join(FLAGS.log, f))
 	except Exception as e:
 		print(e)
 		print("Error creating log directory. Check permissions!")
