@@ -2,13 +2,11 @@ import sys
 print(sys.version)
 # This file is covered by the LICENSE file in the root of this project.
 import argparse
-import subprocess
 import datetime
 import yaml
 from shutil import copyfile
 import os
 import shutil
-import __init__ as booger
 import modules.trainer
 import modules.trainer_hrnet
 import modules.trainer_resnest

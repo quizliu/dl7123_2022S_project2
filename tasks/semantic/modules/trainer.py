@@ -251,7 +251,7 @@ class Trainer():
 			if iou > best_train_iou:
 				print("Best mean iou in training set so far, save model!")
 				best_train_iou = iou
-				self.model_single.save_checkpoint(self.log, suffix="_train")
+				self.model_single.save_checkpoint(self.log, suffix="_train" + self.ARCH['backbone']['name'])
 
 			if epoch % self.ARCH["train"]["report_epoch"] == 0:
 				# evaluate on validation set
@@ -276,7 +276,7 @@ class Trainer():
 					best_val_iou = iou
 
 					# save the weights!
-					self.model_single.save_checkpoint(self.log, suffix="")
+					self.model_single.save_checkpoint(self.log, suffix=self.ARCH['backbone']['name'])
 
 				print("*" * 80)
 
