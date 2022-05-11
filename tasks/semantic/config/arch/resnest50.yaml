@@ -25,7 +25,7 @@ train:
 # hrnet: all model related parameters are from hrnet repo's config
 ################################################################################
 backbone:
-  name: "resnest50"
+  name: "resnest"
   input_depth:
     range: True
     xyz: True
