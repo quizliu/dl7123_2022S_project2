@@ -131,7 +131,7 @@ if __name__ == '__main__':
 	model_name = ARCH['backbone']['name']
 	if model_name == 'hrnet':
 		trainer = modules.trainer_hrnet.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
-	elif model_name == 'resnest50':
+	elif model_name == 'resnest':
 		trainer = modules.trainer_resnest.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	else:
 		trainer = modules.trainer.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)

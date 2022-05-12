@@ -462,6 +462,7 @@ class HighResolutionNet(nn.Module):
         x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
 
         x = torch.cat([x[0], x1, x2, x3], 1)
+        # x = torch.cat([x[0], x1, x2], 1)
 
         x = self.last_layer(x)
 
