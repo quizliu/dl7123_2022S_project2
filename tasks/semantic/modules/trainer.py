@@ -420,6 +420,8 @@ class Trainer():
 					proj_mask = proj_mask.cuda()
 				if self.gpu:
 					proj_labels = proj_labels.cuda(non_blocking=True).long()
+				else:
+					proj_labels = proj_labels.long()
 
 				# compute output
 				output = model(in_vol, proj_mask)

@@ -302,14 +302,14 @@ class Trainer():
 				proj_mask = proj_mask.cuda()
 			if self.gpu:
 				proj_labels = proj_labels.cuda(non_blocking=True).long()
+			else:
+				proj_labels = proj_labels.long()
 
 			# compute output
 			######################################################################
 			# resnest
 			######################################################################
 			output = model(in_vol)
-			# output = output.type(torch.LongTensor)
-			proj_labels = proj_labels.long()
 			loss = criterion(torch.log(output.clamp(min=1e-8)), proj_labels)
 
 			# compute gradient and do SGD step
@@ -405,12 +405,13 @@ class Trainer():
 					proj_mask = proj_mask.cuda()
 				if self.gpu:
 					proj_labels = proj_labels.cuda(non_blocking=True).long()
+				else:
+					proj_labels = proj_labels.long()
 
 				# compute output
 				# output = model(in_vol, proj_mask)
 				# change validate code too 
 				output = model(in_vol)
-				proj_labels = proj_labels.long()
 				loss = criterion(torch.log(output.clamp(min=1e-8)), proj_labels)
 
 				# measure accuracy and record loss
