@@ -10,6 +10,7 @@ import shutil
 import modules.trainer
 import modules.trainer_hrnet
 import modules.trainer_resnest
+import modules.trainer_convnext
 
 if __name__ == '__main__':
 	print('main:', sys.version)
@@ -133,6 +134,8 @@ if __name__ == '__main__':
 		trainer = modules.trainer_hrnet.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	elif model_name == 'resnest':
 		trainer = modules.trainer_resnest.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
+	elif model_name == 'convnext':
+		trainer = modules.trainer_convnext.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	else:
 		trainer = modules.trainer.Trainer(ARCH, DATA, FLAGS.dataset, FLAGS.log, FLAGS.testdata, FLAGS.pretrained)
 	trainer.train()

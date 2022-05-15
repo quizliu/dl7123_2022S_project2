@@ -3,7 +3,7 @@
 ################################################################################
 train:
   loss: "xentropy"       # must be either xentropy or iou
-  max_epochs: 50
+  max_epochs: 100
   lr: 0.01               # sgd learning rate
   wup_epochs: 1          # warmup during first XX epochs (can be float)
   momentum: 0.9          # sgd momentum
@@ -25,7 +25,7 @@ train:
 # hrnet: all model related parameters are from hrnet repo's config
 ################################################################################
 backbone:
-  name: "hrnet"
+  name: "convnext"
   input_depth:
     range: True
     xyz: True
