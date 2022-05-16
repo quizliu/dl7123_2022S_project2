@@ -119,13 +119,15 @@ class ConvNeXt(nn.Module):
 			self.unconv.append(nn.Sequential(
 				nn.ConvTranspose2d(self.dims[0], 32, kernel_size=4, stride=4, padding=0),
 				LayerNorm(32, eps=1e-6, data_format="channels_first"),
-				nn.GELU()
+				nn.GELU(),
+				Block(dim=32),
 			))
 			for i in range(3):
 				self.unconv.append(nn.Sequential(
 					nn.ConvTranspose2d(self.dims[i + 1], self.dims[i], kernel_size=2, stride=2, padding=0),
 					LayerNorm(self.dims[i], eps=1e-6, data_format="channels_first"),
-					nn.GELU()
+					nn.GELU(),
+					Block(self.dims[i])
 				))
 
 			self.conv_head = nn.Sequential(  # head conv layer channel 32 -> 20

@@ -86,7 +86,7 @@ class Trainer():
 			dist.init_process_group("nccl", rank=dist.get_rank(), world_size=torch.cuda.device_count())
 		from tasks.semantic.modules.convnext_model import ConvNeXt
 		with torch.no_grad():
-			self.model = ConvNeXt(in_chans=5, dims=[72, 144, 288, 576])
+			self.model = ConvNeXt(in_chans=5, dims=[64, 128, 256, 512])
 		print("ConvNeXt Total number of parameters: ", sum(p.numel() for p in self.model.parameters()))
 		print("ConvNeXt Total number of parameters requires_grad: ",
 			  sum(p.numel() for p in self.model.parameters() if p.requires_grad)
