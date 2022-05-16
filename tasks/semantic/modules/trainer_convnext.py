@@ -104,7 +104,7 @@ class Trainer():
 			cudnn.fastest = True
 			self.gpu = True
 			self.n_gpus = 1
-			self.model.cuda()
+			self.model = self.model.to(self.device)
 		if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 			print("Let's use", torch.cuda.device_count(), "GPUs!")
 			self.model = nn.DataParallel(self.model)  # spread in gpus
