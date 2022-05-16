@@ -109,7 +109,31 @@ class ConvNeXt(nn.Module):
 			layer = norm_layer(dims[i_layer])
 			layer_name = f'norm{i_layer}'
 			self.add_module(layer_name, layer)
+			##############################################################################
+			self.input_conv = nn.Sequential(  # input conv layer, channel 5 -> 32
+				nn.ConvTranspose2d(5, 32, kernel_size=3, stride=1, padding=1),
+				LayerNorm(32, eps=1e-6, data_format="channels_first"),
+				nn.GELU()
+			)
+			self.unconv = nn.ModuleList()  # unconv layers, [3] -> [2] -> [1] -> [0]
+			self.unconv.append(nn.Sequential(
+				nn.ConvTranspose2d(self.dims[0], 32, kernel_size=4, stride=4, padding=0),
+				LayerNorm(32, eps=1e-6, data_format="channels_first"),
+				nn.GELU()
+			))
+			for i in range(3):
+				self.unconv.append(nn.Sequential(
+					nn.ConvTranspose2d(self.dims[i + 1], self.dims[i], kernel_size=2, stride=2, padding=0),
+					LayerNorm(self.dims[i], eps=1e-6, data_format="channels_first"),
+					nn.GELU()
+				))
 
+			self.conv_head = nn.Sequential(  # head conv layer channel 32 -> 20
+				nn.Conv2d(32, 20, kernel_size=3, stride=1, padding=1),
+				LayerNorm(20, eps=1e-6, data_format="channels_first"),
+				nn.GELU(),
+			)
+		##############################################################################
 		self.apply(self._init_weights)
 
 	def _init_weights(self, m):
@@ -143,10 +167,8 @@ class ConvNeXt(nn.Module):
 			raise TypeError('pretrained must be a str or None')
 
 	def forward_features(self, x):
-		self.input = nn.Sequential(
-			nn.Conv2d(5, 32, kernel_size=3, stride=1, padding=1)
-		)(x)
-		outs = [self.input]
+		self.input = x
+		outs = []
 		for i in range(4):
 			x = self.downsample_layers[i](x)
 			x = self.stages[i](x)
@@ -155,45 +177,29 @@ class ConvNeXt(nn.Module):
 				x_out = norm_layer(x)
 				outs.append(x_out)
 
-		return outs
+		return tuple(outs)
 
 	def forward_kitti(self, x):
 		'''
 		input: 64 2048
 		kernel_size = [1, 4], stride = [1, 2], padding = [0, 1] ===> *1, *2
 		'''
-		unconv = nn.ModuleList()
-		unconv.append(nn.Sequential(
-			nn.ConvTranspose2d(self.dims[0], 32, kernel_size=4, stride=4, padding=0),
-			LayerNorm(32, eps=1e-6, data_format="channels_first"),
-			nn.GELU(),
-		))
-		unconv.append(nn.Sequential(
-			nn.ConvTranspose2d(self.dims[1], self.dims[0], kernel_size=2, stride=2, padding=0),
-			LayerNorm(self.dims[0], eps=1e-6, data_format="channels_first"),
-			nn.GELU(),
-		))
-		unconv.append(nn.Sequential(
-			nn.ConvTranspose2d(self.dims[2], self.dims[1], kernel_size=2, stride=2, padding=0),
-			LayerNorm(self.dims[1], eps=1e-6, data_format="channels_first"),
-			nn.GELU(),
-		))
-		unconv.append(nn.Sequential(
-			nn.ConvTranspose2d(self.dims[3], self.dims[2], kernel_size=2, stride=2, padding=0),
-			LayerNorm(self.dims[2], eps=1e-6, data_format="channels_first"),
-			nn.GELU(),
-		))
+		new_x = self.unconv[3](x[3])
+		new_x += x[2]
 
-		for i in range(4)[::-1]:
-			x[i] += unconv[i](x[i + 1])
-		return x[0]
+		new_x = self.unconv[2](new_x)
+		new_x += x[1]
+
+		new_x = self.unconv[1](new_x)
+		new_x += x[0]
+
+		new_x = self.unconv[0](new_x)
+		first_conv_x = self.input_conv(self.input)
+		new_x += first_conv_x
+		return new_x
 
 	def forward_head(self, x):
-		x = nn.Sequential(
-			nn.Conv2d(32, 20, kernel_size=1, stride=1),
-			LayerNorm(20, eps=1e-6, data_format="channels_first"),
-			nn.GELU(),
-		)(x)
+		x = self.conv_head(x)
 		return x
 
 	def forward(self, x):
