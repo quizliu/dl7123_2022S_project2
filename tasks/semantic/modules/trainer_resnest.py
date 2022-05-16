@@ -19,7 +19,7 @@ from tasks.semantic.modules.segmentator import *
 from tasks.semantic.modules.ioueval import *
 
 import torch.distributed as dist
-
+# torch.autograd.set_detect_anomaly(True)
 class Trainer():
 	def __init__(self, ARCH, DATA, datadir, logdir, testdata, path=None):
 		# parameters

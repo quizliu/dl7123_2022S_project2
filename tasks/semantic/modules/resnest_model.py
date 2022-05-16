@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 from torch.autograd import Function
 import tasks.semantic.modules.resnest_lib as lib
+# torch.autograd.set_detect_anomaly(True)
 
 class DropBlock2D(object):
     def __init__(self, *args, **kwargs):
@@ -131,7 +132,7 @@ class SplAtConv2d(nn.Module):
         self.use_bn = norm_layer is not None
         if self.use_bn:
             self.bn0 = norm_layer(channels*radix)
-        self.relu = ReLU(inplace=True)
+        self.relu = ReLU()
         self.fc1 = Conv2d(channels, inter_channels, 1, groups=self.cardinality)
         if self.use_bn:
             self.bn1 = norm_layer(inter_channels)
@@ -237,7 +238,7 @@ class Bottleneck(nn.Module):
         if last_gamma:
             from torch.nn.init import zeros_
             zeros_(self.bn3.weight)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU()
         self.downsample = downsample
         self.dilation = dilation
         self.stride = stride
@@ -329,43 +330,40 @@ class ResNet(nn.Module):
             conv_layer = nn.Conv2d
         conv_kwargs = {'average_mode': rectify_avg} if rectified_conv else {}
         KITTI_input = 5
-        if deep_stem:
-            self.conv1 = nn.Sequential(
-                conv_layer(KITTI_input, stem_width, kernel_size=3, stride=2, padding=1, bias=False, **conv_kwargs),
+        if deep_stem:  # all conv1 stride = 1
+            self.conv1 = nn.Sequential(  # conv1 has 3 conv layer, change l1 stride=1, which is same to l2, delete l2
+                conv_layer(KITTI_input, stem_width, kernel_size=3, stride=1, padding=1, bias=False, **conv_kwargs),
                 norm_layer(stem_width),
-                nn.ReLU(inplace=True),
-                conv_layer(stem_width, stem_width, kernel_size=3, stride=1, padding=1, bias=False, **conv_kwargs),
-                norm_layer(stem_width),
-                nn.ReLU(inplace=True),
+                nn.ReLU(),
                 conv_layer(stem_width, stem_width*2, kernel_size=3, stride=1, padding=1, bias=False, **conv_kwargs),
             )
         else:
-            self.conv1 = conv_layer(KITTI_input, 64, kernel_size=7, stride=2, padding=3,
+            self.conv1 = conv_layer(KITTI_input, stem_width*2, kernel_size=7, stride=1, padding=3,
                                    bias=False, **conv_kwargs)
         self.bn1 = norm_layer(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0], norm_layer=norm_layer, is_first=False)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, norm_layer=norm_layer)
+        self.layer1 = self._make_layer(block, stem_width * 2, layers[0], stride=2, norm_layer=norm_layer, is_first=False)  # layer1 stride = 2
+        self.layer2 = self._make_layer(block, stem_width * 2 * 2, layers[1], stride=2, norm_layer=norm_layer)
         if dilated or dilation == 4:
-            self.layer3 = self._make_layer(block, 256, layers[2], stride=1,
+            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=1,
                                            dilation=2, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
-            self.layer4 = self._make_layer(block, 512, layers[3], stride=1,
+            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=1,
                                            dilation=4, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
-        elif dilation==2:
-            self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
+        elif dilation == 2:
+            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=2,
                                            dilation=1, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
-            self.layer4 = self._make_layer(block, 512, layers[3], stride=1,
+            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=1,
                                            dilation=2, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
         else:
-            self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
+            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=2,
                                            norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
-            self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
+            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=2,
                                            norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
         self.avgpool = GlobalAvgPool2d()
@@ -379,6 +377,30 @@ class ResNet(nn.Module):
             elif isinstance(m, norm_layer):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+
+        # self.dims = [stem_width * 2 * 2 * 2, stem_width * 2 * 2 * 2 * 2, stem_width * 2 * 2 * 2 * 2 * 2, stem_width * 2 * 2 * 2 * 2 * 2 * 2]
+        i = 3
+        self.dims = [stem_width * 2 ** i, stem_width * 2 ** (i + 1), stem_width * 2 ** (i + 2), stem_width * 2 ** (i + 3)]
+        self.unconv = nn.ModuleList()  # unconv layers, [3] -> [2] -> [1] -> [0]
+        self.unconv.append(nn.Sequential(
+            nn.ConvTranspose2d(self.dims[0], stem_width * 2, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(stem_width * 2),
+            self.relu
+        ))
+        for i in range(3):
+            self.unconv.append(nn.Sequential(
+                nn.ConvTranspose2d(self.dims[i + 1], self.dims[i], kernel_size=2, stride=2, padding=0),
+                nn.BatchNorm2d(self.dims[i]),
+                self.relu
+            ))
+
+        self.conv_head = nn.Sequential(  # head conv layer channel 32 -> 20
+            nn.Conv2d(64, 20, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(20),
+            self.relu
+        )
+
+    ##############################################################################
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1, norm_layer=None,
                     dropblock_prob=0.0, is_first=True):
@@ -436,27 +458,39 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)  # ([6, 64, 32, 1024])
+        x = self.conv1(x)  # stem * 2
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)  # ([6, 64, 32, 1024])
+        unconv_plus_0 = x
 
-        x = self.layer1(x) # [6, 64, 16, 512])
-        x = self.layer2(x) # ([6, 256, 16, 512])
-        x = self.layer3(x) # [6, 512, 8, 256])
-        x = self.layer4(x)# ([6, 1024, 4, 128])
-                            # ([6, 2048, 2, 64])
-        x = self.avgpool(x)  # ([6, 2048])
-        x = torch.flatten(x, 1)
-        if self.drop:
-            x = self.drop(x)
-        x = self.fc(x)
+        x = self.layer1(x)  # stem * 8
+        unconv_plus_1 = x
+        x = self.layer2(x)  # stem * 2
+        unconv_plus_2 = x
+        x = self.layer3(x)  # stem * 2
+        unconv_plus_3 = x
+        x = self.layer4(x)  # stem * 2
 
+        x = self.unconv[3](x)
+        x = x + unconv_plus_3
+        x = self.unconv[2](x)
+        x = x + unconv_plus_2
+        x = self.unconv[1](x)
+        x = x + unconv_plus_1
+        x = self.unconv[0](x)
+        x = x + unconv_plus_0
+
+        x = self.conv_head(x)
+        x = F.softmax(x, dim=1)
         return x
 
 def resnest50(pretrained=False, root='~/.encoding/models', **kwargs):
     model = ResNet(Bottleneck, [3, 4, 6, 3],
-                   radix=2, groups=1, bottleneck_width=64,
+                   radix=2, groups=1, bottleneck_width=16,
                    deep_stem=True, stem_width=32, avg_down=True,
                    avd=True, avd_first=False, **kwargs)
+    print("ResNeSt Total number of parameters: ", sum(p.numel() for p in model.parameters()))
+    print("ResNeSt Total number of parameters requires_grad: ",
+          sum(p.numel() for p in model.parameters() if p.requires_grad)
+          )
     return model
