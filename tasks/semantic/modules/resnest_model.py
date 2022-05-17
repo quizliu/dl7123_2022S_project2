@@ -5,7 +5,7 @@ from torch.nn import Conv2d, ReLU
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 from torch.autograd import Function
-import tasks.semantic.modules.resnest_lib as lib
+# import tasks.semantic.modules.resnest_lib as lib
 # torch.autograd.set_detect_anomaly(True)
 
 class DropBlock2D(object):
@@ -49,46 +49,46 @@ class RFConv2d(Conv2d):
 
     def forward(self, input):
         output = self._conv_forward(input, self.weight)
-        if self.rectify:
-            output = rectify(output, input, self.kernel_size, self.stride,
-                             self.padding, self.dilation, self.average)
+        # if self.rectify:
+        #     output = rectify(output, input, self.kernel_size, self.stride,
+        #                      self.padding, self.dilation, self.average)
         return output
 
     def extra_repr(self):
         return super().extra_repr() + ', rectify={}, average_mode={}'. \
             format(self.rectify, self.average)
 
-class _rectify(Function):
-    @staticmethod
-    def forward(ctx, y, x, kernel_size, stride, padding, dilation, average):
-        ctx.save_for_backward(x)
-        # assuming kernel_size is 3
-        kernel_size = [k + 2 * (d - 1) for k,d in zip(kernel_size, dilation)]
-        ctx.kernel_size = kernel_size
-        ctx.stride = stride
-        ctx.padding = padding
-        ctx.dilation = dilation
-        ctx.average = average
-        if x.is_cuda:
-            lib.gpu.conv_rectify(y, x, kernel_size, stride, padding, dilation, average)
-        else:
-            lib.cpu.conv_rectify(y, x, kernel_size, stride, padding, dilation, average)
-        ctx.mark_dirty(y)
-        return y
-
-    @staticmethod
-    def backward(ctx, grad_y):
-        x, = ctx.saved_variables
-        if x.is_cuda:
-            lib.gpu.conv_rectify(grad_y, x, ctx.kernel_size, ctx.stride,
-                                 ctx.padding, ctx.dilation, ctx.average)
-        else:
-            lib.cpu.conv_rectify(grad_y, x, ctx.kernel_size, ctx.stride,
-                                 ctx.padding, ctx.dilation, ctx.average)
-        ctx.mark_dirty(grad_y)
-        return grad_y, None, None, None, None, None, None
-
-rectify = _rectify.apply
+# class _rectify(Function):
+#     @staticmethod
+#     def forward(ctx, y, x, kernel_size, stride, padding, dilation, average):
+#         ctx.save_for_backward(x)
+#         # assuming kernel_size is 3
+#         kernel_size = [k + 2 * (d - 1) for k,d in zip(kernel_size, dilation)]
+#         ctx.kernel_size = kernel_size
+#         ctx.stride = stride
+#         ctx.padding = padding
+#         ctx.dilation = dilation
+#         ctx.average = average
+#         if x.is_cuda:
+#             lib.gpu.conv_rectify(y, x, kernel_size, stride, padding, dilation, average)
+#         else:
+#             lib.cpu.conv_rectify(y, x, kernel_size, stride, padding, dilation, average)
+#         ctx.mark_dirty(y)
+#         return y
+#
+#     @staticmethod
+#     def backward(ctx, grad_y):
+#         x, = ctx.saved_variables
+#         if x.is_cuda:
+#             lib.gpu.conv_rectify(grad_y, x, ctx.kernel_size, ctx.stride,
+#                                  ctx.padding, ctx.dilation, ctx.average)
+#         else:
+#             lib.cpu.conv_rectify(grad_y, x, ctx.kernel_size, ctx.stride,
+#                                  ctx.padding, ctx.dilation, ctx.average)
+#         ctx.mark_dirty(grad_y)
+#         return grad_y, None, None, None, None, None, None
+#
+# rectify = _rectify.apply
 
 class rSoftMax(nn.Module):
     def __init__(self, radix, cardinality):
