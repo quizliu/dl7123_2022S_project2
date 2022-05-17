@@ -195,7 +195,7 @@ class Bottleneck(nn.Module):
         self.bn1 = norm_layer(group_width)
         self.dropblock_prob = dropblock_prob
         self.radix = radix
-        self.avd = avd and (stride > 1 or is_first)
+        self.avd = avd and ((stride > 1 if type(stride) is int else stride[-1] > 1) or is_first)
         self.avd_first = avd_first
 
         if self.avd:
@@ -343,27 +343,27 @@ class ResNet(nn.Module):
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, stem_width * 2, layers[0], stride=2, norm_layer=norm_layer, is_first=False)  # layer1 stride = 2
-        self.layer2 = self._make_layer(block, stem_width * 2 * 2, layers[1], stride=2, norm_layer=norm_layer)
+        self.layer1 = self._make_layer(block, stem_width * 2, layers[0], stride=[1, 2], norm_layer=norm_layer, is_first=False)  # layer1 stride = 2
+        self.layer2 = self._make_layer(block, stem_width * 2 * 2, layers[1], stride=[1, 2], norm_layer=norm_layer)
         if dilated or dilation == 4:
-            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=1,
+            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=[1, 2],
                                            dilation=2, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
-            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=1,
+            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=[1, 2],
                                            dilation=4, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
         elif dilation == 2:
-            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=2,
+            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=[1, 2],
                                            dilation=1, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
             self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=1,
                                            dilation=2, norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
         else:
-            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=2,
+            self.layer3 = self._make_layer(block, stem_width * 2 * 2 * 2, layers[2], stride=[1, 2],
                                            norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
-            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=2,
+            self.layer4 = self._make_layer(block, stem_width * 2 * 2 * 2 * 2, layers[3], stride=[1, 2],
                                            norm_layer=norm_layer,
                                            dropblock_prob=dropblock_prob)
         self.avgpool = GlobalAvgPool2d()
@@ -383,13 +383,13 @@ class ResNet(nn.Module):
         self.dims = [stem_width * 2 ** i, stem_width * 2 ** (i + 1), stem_width * 2 ** (i + 2), stem_width * 2 ** (i + 3)]
         self.unconv = nn.ModuleList()  # unconv layers, [3] -> [2] -> [1] -> [0]
         self.unconv.append(nn.Sequential(
-            nn.ConvTranspose2d(self.dims[0], stem_width * 2, kernel_size=2, stride=2, padding=0),
+            nn.ConvTranspose2d(self.dims[0], stem_width * 2, kernel_size=[3, 2], stride=[1, 2], padding=[1, 0]),
             nn.BatchNorm2d(stem_width * 2),
             self.relu
         ))
         for i in range(3):
             self.unconv.append(nn.Sequential(
-                nn.ConvTranspose2d(self.dims[i + 1], self.dims[i], kernel_size=2, stride=2, padding=0),
+                nn.ConvTranspose2d(self.dims[i + 1], self.dims[i], kernel_size=[3, 2], stride=[1, 2], padding=[1, 0]),
                 nn.BatchNorm2d(self.dims[i]),
                 self.relu
             ))
@@ -463,13 +463,13 @@ class ResNet(nn.Module):
         x = self.relu(x)
         unconv_plus_0 = x
 
-        x = self.layer1(x)  # stem * 8
+        x = self.layer1(x)  # /2
         unconv_plus_1 = x
-        x = self.layer2(x)  # stem * 2
+        x = self.layer2(x)  # / 2
         unconv_plus_2 = x
-        x = self.layer3(x)  # stem * 2
+        x = self.layer3(x)  # /2
         unconv_plus_3 = x
-        x = self.layer4(x)  # stem * 2
+        x = self.layer4(x)  # /2
 
         x = self.unconv[3](x)
         x = x + unconv_plus_3
@@ -486,7 +486,7 @@ class ResNet(nn.Module):
 
 def resnest50(pretrained=False, root='~/.encoding/models', **kwargs):
     model = ResNet(Bottleneck, [3, 4, 6, 3],
-                   radix=2, groups=1, bottleneck_width=16,
+                   radix=2, groups=1, bottleneck_width=32,
                    deep_stem=True, stem_width=32, avg_down=True,
                    avd=True, avd_first=False, **kwargs)
     print("ResNeSt Total number of parameters: ", sum(p.numel() for p in model.parameters()))
