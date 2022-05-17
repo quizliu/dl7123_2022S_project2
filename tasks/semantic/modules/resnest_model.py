@@ -395,7 +395,7 @@ class ResNet(nn.Module):
             ))
 
         self.conv_head = nn.Sequential(  # head conv layer channel 32 -> 20
-            nn.Conv2d(64, 20, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(stem_width * 2, 20, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(20),
             self.relu
         )
